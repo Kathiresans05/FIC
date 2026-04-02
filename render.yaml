@@ -1,0 +1,33 @@
+services:
+  # Backend Service
+  - type: web
+    name: forge-india-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false # Set this in Render dashboard
+      - key: NODE_ENV
+        value: production
+
+  # Frontend Service
+  - type: static
+    name: forge-india-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: forge-india-backend
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
