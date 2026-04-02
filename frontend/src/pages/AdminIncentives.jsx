@@ -40,7 +40,7 @@ const AdminIncentives = () => {
     conditions: ''
   });
 
-  const API_BASE_URL = 'http://localhost:5000/api/incentives';
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/incentives`;
   
   const handleEditRule = (rule) => {
     setEditingRuleId(rule._id);

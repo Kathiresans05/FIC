@@ -52,7 +52,8 @@ const AdminReports = () => {
   const fetchStats = async (range = timeRange) => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/reports/stats?range=${range}`);
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await axios.get(`${API_BASE}/api/reports/stats?range=${range}`);
       setData(response.data);
     } catch (error) {
       console.error('Error fetching report stats:', error);
@@ -71,7 +72,8 @@ const AdminReports = () => {
   };
 
   const handleExport = () => {
-    window.open('http://localhost:5000/api/reports/export', '_blank');
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    window.open(`${API_BASE}/api/reports/export`, '_blank');
   };
 
   if (loading) {
