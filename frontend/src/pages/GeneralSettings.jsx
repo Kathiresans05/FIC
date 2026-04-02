@@ -42,7 +42,7 @@ const GeneralSettings = () => {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [pMsg, setPMsg] = useState({ text: '', type: '' });
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     if (!passwords.new || passwords.new.length < 8) {
       setPMsg({ text: 'New password must be at least 8 characters.', type: 'error' });
       return;
@@ -52,13 +52,26 @@ const GeneralSettings = () => {
       return;
     }
     
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     setIsUpdatingPassword(true);
-    setTimeout(() => {
-      setIsUpdatingPassword(false);
+    try {
+      const response = await fetch(`${API_BASE}/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwords.new })
+      });
+
+      if (!response.ok) throw new Error('Failed to update password');
+      
       setPMsg({ text: 'Password successfully updated!', type: 'success' });
       setPasswords({ current: '', new: '', confirm: '' });
       setTimeout(() => setPMsg({ text: '', type: '' }), 3000);
-    }, 1200);
+    } catch (error) {
+      console.error('Error updating password:', error);
+      setPMsg({ text: 'Failed to update password. Try again.', type: 'error' });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleImageUpload = (e) => {

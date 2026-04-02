@@ -50,35 +50,33 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (role) => {
+  const login = async (role, email, password) => {
     const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     try {
-      // Try to find a real user with this role in the DB
+      // Fetch users by role and match email + password
       const res = await fetch(`${API_BASE}/api/users?role=${encodeURIComponent(role)}`);
       if (res.ok) {
         const users = await res.json();
-        if (users.length > 0) {
-          const dbUser = users[0];
-          const normalizedUser = { ...dbUser, id: dbUser._id };
-          setUser(normalizedUser);
-          localStorage.setItem('forgeindia_user', JSON.stringify(normalizedUser));
-          return;
+        // Find user matching email
+        const matchedUser = users.find(u => u.email.toLowerCase() === (email || '').toLowerCase());
+        if (!matchedUser) {
+          throw new Error('No account found with this email for the selected role.');
         }
+        // Check password — if user has a password set, validate it
+        if (matchedUser.password && matchedUser.password !== '') {
+          if (matchedUser.password !== password) {
+            throw new Error('Incorrect password. Please try again.');
+          }
+        }
+        const normalizedUser = { ...matchedUser, id: matchedUser._id };
+        setUser(normalizedUser);
+        localStorage.setItem('forgeindia_user', JSON.stringify(normalizedUser));
+        return { success: true };
       }
     } catch (err) {
-      console.warn('Could not fetch user from DB, using mock session:', err);
+      return { success: false, message: err.message || 'Login failed. Please try again.' };
     }
-
-    // Fallback: create a session-only mock (no DB sync)
-    const mockUser = {
-      id: null,
-      name: role === 'Agent' ? 'Rahul Sharma' : role.includes('Consultancy') ? 'Neha Gupta' : 'Admin User',
-      role,
-      email: `${role.toLowerCase().replace(/ /g, '_')}@forgeindia.pro`,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${role}`
-    };
-    setUser(mockUser);
-    localStorage.setItem('forgeindia_user', JSON.stringify(mockUser));
+    return { success: false, message: 'Login failed. Please try again.' };
   };
 
   const logout = () => {

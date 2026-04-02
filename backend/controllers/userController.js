@@ -17,7 +17,7 @@ export const getUsers = async (req, res) => {
 // @route   POST /api/users
 export const createUser = async (req, res) => {
   try {
-    const { name, email, role, mobile, location, status } = req.body;
+    const { name, email, password, role, mobile, location, status } = req.body;
     
     // Check if user already exists
     const userExists = await User.findOne({ email });
@@ -28,6 +28,7 @@ export const createUser = async (req, res) => {
     const newUser = await User.create({
       name,
       email,
+      password: password || '',
       role,
       mobile,
       location: location || '',

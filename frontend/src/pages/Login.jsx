@@ -7,6 +7,21 @@ const Login = () => {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState('Admin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('password123');
+  const [error, setError] = useState('');
+
+  // Set default email when role changes
+  useEffect(() => {
+    const defaultEmails = {
+      'Admin': 'admin@forgeindia.pro',
+      'Recruitment Manager': 'recruitment_manager@forgeindia.pro',
+      'Consultancy Executive': 'consultancy_executive@forgeindia.pro',
+      'Agent': 'agent@forgeindia.pro'
+    };
+    setEmail(defaultEmails[selectedRole] || '');
+    setError('');
+  }, [selectedRole]);
 
   useEffect(() => {
     if (user) {
@@ -25,12 +40,17 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    await login(selectedRole);
+    setError('');
+    const result = await login(selectedRole, email, password);
     
-    // Navigate after login completes
-    const path = selectedRole === 'Agent' ? '/agent/dashboard' : 
-                 selectedRole.includes('Admin') ? '/admin/dashboard' : '/team/dashboard';
-    navigate(path);
+    if (result && result.success) {
+      // Navigate after login completes
+      const path = selectedRole === 'Agent' ? '/agent/dashboard' : 
+                   selectedRole.includes('Admin') ? '/admin/dashboard' : '/team/dashboard';
+      navigate(path);
+    } else {
+      setError(result?.message || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -68,20 +88,33 @@ const Login = () => {
             </div>
           </div>
 
+          {error && (
+            <div className="error-message" style={{ color: '#DC2626', backgroundColor: '#FEF2F2', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', fontWeight: '500', textAlign: 'center', border: '1px solid #FEE2E2' }}>
+              {error}
+            </div>
+          )}
+
           <div className="form-group">
             <label>Email Address</label>
             <input 
-              key={selectedRole}
               type="email" 
               placeholder="e.g. name@forgeindia.pro" 
-              defaultValue={selectedRole === 'Agent' ? 'agent@forgeindia.pro' : selectedRole.includes('Consultancy') ? 'consultancy_executive@forgeindia.pro' : selectedRole === 'Recruitment Manager' ? 'recruitment_manager@forgeindia.pro' : 'admin@forgeindia.pro'} 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
           <div className="form-group">
             <label>Password</label>
             <div className="password-input">
-              <input type="password" placeholder="••••••••" defaultValue="password123" />
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
               <Lock size={16} />
             </div>
           </div>

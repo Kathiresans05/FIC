@@ -27,6 +27,7 @@ const AdminTeam = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     mobile: '',
     role: 'TeamMember',
     location: '',
@@ -69,7 +70,7 @@ const AdminTeam = () => {
 
       if (response.ok) {
         setIsModalOpen(false);
-        setFormData({ name: '', email: '', mobile: '', role: 'TeamMember', location: '', status: 'Active' });
+        setFormData({ name: '', email: '', password: '', mobile: '', role: 'TeamMember', location: '', status: 'Active' });
         fetchUsers();
       } else {
         const error = await response.json();
@@ -225,6 +226,16 @@ const AdminTeam = () => {
                 placeholder="email@example.com" 
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input 
+                type="password" 
+                required 
+                placeholder="Set a login password" 
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
             </div>
             <div className="form-group">
