@@ -49,9 +49,9 @@ const Topbar = ({ toggleSidebar }) => {
       {/* Everything else grouped and pushed to the right */}
       <div className="topbar-right-panel">
         <div className="topbar-actions">
-          <button className="icon-btn">
+          <a href="https://forgeindiaconnect.com" target="_blank" rel="noopener noreferrer" className="icon-btn" title="View Public Website">
             <Globe size={20} strokeWidth={1.5} />
-          </button>
+          </a>
           <div className="notification-container">
             <button className="icon-btn bell" onClick={() => setIsNotifOpen(!isNotifOpen)}>
               <Bell size={20} strokeWidth={1.5} />

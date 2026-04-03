@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Trophy, 
   Gift, 
@@ -9,20 +9,131 @@ import {
   CheckCircle2, 
   AlertCircle,
   MoreVertical,
-  History
+  History,
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
+import API_BASE_URL from '../api/config';
 
 const AdminRewards = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [rewards, setRewards] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingReward, setEditingReward] = useState(null);
 
-  const milestones = [
-    { id: 1, title: 'Early Starter Perk', criteria: '5 Joins in a Month', reward: 'Smartphone (₹15,000)', status: 'Active', achievers: 12 },
-    { id: 2, title: 'Quarterly High-Flyer', criteria: '25 Joins in a Quarter', reward: 'Laptop (₹65,000)', status: 'Active', achievers: 3 },
-    { id: 3, title: 'The Recruitment Legend', criteria: '100 Total Lifetime Joins', reward: 'International Trip (Couple)', status: 'Active', achievers: 1 },
-    { id: 4, title: 'Top Referrer (Monthly)', criteria: 'Highest Valid Referrals', reward: '₹10,000 Cash Bonus', status: 'Active', achievers: 5 },
-  ];
+  const initialFormState = {
+    title: '',
+    criteria: 'Joins in a Month',
+    targetValue: '',
+    rewardDesc: '',
+    eligibility: ''
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+
+  const fetchRewards = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rewards`);
+      const data = await response.json();
+      setRewards(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching rewards:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAchievements = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/achievements`);
+      const data = await response.json();
+      setAchievements(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRewards();
+    fetchAchievements();
+  }, []);
+
+  const openCreateModal = () => {
+    setEditingReward(null);
+    setFormData(initialFormState);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (reward) => {
+    setEditingReward(reward);
+    setFormData({
+      title: reward.title,
+      criteria: reward.criteria,
+      targetValue: reward.targetValue,
+      rewardDesc: reward.rewardDesc,
+      eligibility: reward.eligibility || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!formData.title || !formData.criteria || !formData.targetValue || !formData.rewardDesc) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const url = editingReward 
+        ? `${API_BASE_URL}/api/rewards/${editingReward._id}` 
+        : `${API_BASE_URL}/api/rewards`;
+      
+      const method = editingReward ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setIsModalOpen(false);
+        fetchRewards();
+      } else {
+        const error = await response.json();
+        alert(`Failed: ${error.message}`);
+      }
+    } catch (error) {
+      alert('Network error while saving reward');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingReward) return;
+    if (!window.confirm('Are you sure you want to delete this reward milestone?')) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rewards/${editingReward._id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        setIsModalOpen(false);
+        fetchRewards();
+      } else {
+        alert('Error deleting reward');
+      }
+    } catch (error) {
+      alert('Network error');
+    }
+  };
 
   const columns = [
     { 
@@ -56,13 +167,6 @@ const AdminRewards = () => {
     }
   ];
 
-  const achieversData = [
-    { id: 1, name: 'Suresh Raina', role: 'External Agent', milestone: 'Early Starter Perk', date: '21 Mar 2024', rewardStatus: 'Dispatched' },
-    { id: 2, name: 'Anjali Sharma', role: 'Recruitment Manager', milestone: 'Quarterly High-Flyer', date: '15 Mar 2024', rewardStatus: 'Claimed' },
-    { id: 3, name: 'Rahul Verma', role: 'Executive', milestone: 'Top Referrer (Monthly)', date: '10 Mar 2024', rewardStatus: 'Pending' },
-    { id: 4, name: 'Karan Mehra', role: 'External Agent', milestone: 'The Recruitment Legend', date: '01 Mar 2024', rewardStatus: 'Dispatched' },
-  ];
-
   return (
     <div className="content-wrapper">
       <div className="section-header">
@@ -71,80 +175,128 @@ const AdminRewards = () => {
           <p className="text-secondary">Define and track specialized rewards that go beyond standard incentives.</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+          <button className="btn btn-primary" onClick={openCreateModal}>
             <Plus size={18} /> New Milestone
           </button>
         </div>
       </div>
 
-      {/* Milestone Cards Grid */}
-      <div className="milestones-grid">
-        {milestones.map((m) => (
-          <div key={m.id} className="card milestone-admin-card">
-            <div className="m-icon-box">
-              {m.id === 3 ? <Trophy size={24} className="text-gold" /> : m.achievers > 5 ? <Rocket size={24} className="text-blue" /> : <Gift size={24} className="text-purple" />}
-            </div>
-            <div className="m-content">
-              <h3>{m.title}</h3>
-              <p className="criteria">{m.criteria}</p>
-              <div className="reward-tag">
-                <Gift size={14} /> {m.reward}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px', gap: '16px', color: '#64748B' }}>
+          <Loader2 className="animate-spin text-accent-blue" size={40} />
+          <p>Fetching active rewards...</p>
+        </div>
+      ) : (
+        <div className="milestones-grid">
+          {rewards.map((m, index) => (
+            <div key={m._id} className="card milestone-admin-card">
+              <div className="m-icon-box">
+                {index % 3 === 0 ? <Rocket size={24} className="text-blue" /> : index % 3 === 1 ? <Gift size={24} className="text-purple" /> : <Trophy size={24} className="text-gold" />}
+              </div>
+              <div className="m-content">
+                <h3>{m.title}</h3>
+                <p className="criteria">{m.targetValue} {m.criteria}</p>
+                <div className="reward-tag">
+                  <Gift size={14} /> {m.rewardDesc}
+                </div>
+              </div>
+              <div className="m-footer">
+                <span className="stats"><Users size={14} /> <strong>{m.achievers || 0}</strong> Achievers</span>
+                <button className="icon-btn-sm" onClick={() => openEditModal(m)} title="View & Edit Reward"><ChevronRight size={18} /></button>
               </div>
             </div>
-            <div className="m-footer">
-              <span className="stats"><Users size={14} /> <strong>{m.achievers}</strong> Achievers</span>
-              <button className="icon-btn-sm"><ChevronRight size={18} /></button>
+          ))}
+          {rewards.length === 0 && (
+            <div style={{ gridColumn: '1 / -1', padding: '60px', textAlign: 'center', border: '2px dashed #CBD5E1', borderRadius: '12px', color: '#64748B' }}>
+              <Gift size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+              <p>No rewards created yet. Click "New Milestone" to get started.</p>
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="card achievers-list-card">
         <div className="chart-header">
           <h3>Recent Achievement Log</h3>
           <button className="btn btn-text-blue"><History size={16} /> Export Achievement History</button>
         </div>
-        <DataTable columns={columns} data={achieversData} actions={false} />
+        <DataTable columns={columns} data={achievements} actions={false} />
       </div>
 
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
-        title="Create New Milestone Reward"
+        title={editingReward ? "View & Edit Milestone Reward" : "Create New Milestone Reward"}
         footer={(
-          <>
-            <button className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button className="btn btn-primary">Save Milestone</button>
-          </>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            {editingReward ? (
+              <button className="btn btn-outline" style={{ borderColor: '#EF4444', color: '#EF4444' }} onClick={handleDelete} type="button">
+                <Trash2 size={16} className="mr-1" style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> Delete
+              </button>
+            ) : (
+              <div></div>
+            )}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn btn-outline" onClick={() => setIsModalOpen(false)} type="button">Cancel</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={isSubmitting} type="button">
+                {isSubmitting ? 'Saving...' : 'Save Milestone'}
+              </button>
+            </div>
+          </div>
         )}
       >
-        <form className="modal-form">
+        <form className="modal-form" onSubmit={handleSave}>
           <div className="form-grid">
             <div className="form-group col-span-2">
               <label>Milestone Title</label>
-              <input type="text" placeholder="e.g. Platinum Recruiter Club" />
+              <input 
+                type="text" 
+                required
+                placeholder="e.g. Platinum Recruiter Club" 
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+              />
             </div>
             <div className="form-group">
               <label>Achievement Criteria</label>
-              <select>
-                <option>Number of Joins (Monthly)</option>
-                <option>Number of Joins (Quarterly)</option>
-                <option>Number of Joins (Lifetime)</option>
-                <option>Total Incentive Earned</option>
-                <option>Highest Valid Lead Count</option>
+              <select 
+                value={formData.criteria}
+                onChange={(e) => setFormData({...formData, criteria: e.target.value})}
+              >
+                <option value="Joins in a Month">Number of Joins (Monthly)</option>
+                <option value="Joins in a Quarter">Number of Joins (Quarterly)</option>
+                <option value="Total Lifetime Joins">Number of Joins (Lifetime)</option>
+                <option value="Total Incentive Earned">Total Incentive Earned</option>
+                <option value="Highest Valid Lead Count">Highest Valid Lead Count</option>
               </select>
             </div>
             <div className="form-group">
               <label>Target Value</label>
-              <input type="number" placeholder="e.g. 50" />
+              <input 
+                type="number" 
+                required
+                placeholder="e.g. 50" 
+                value={formData.targetValue}
+                onChange={(e) => setFormData({...formData, targetValue: e.target.value})}
+              />
             </div>
             <div className="form-group col-span-2">
               <label>Reward Description</label>
-              <input type="text" placeholder="e.g. One-time ₹50,000 cash bonus + Trophy" />
+              <input 
+                type="text" 
+                required
+                placeholder="e.g. One-time ₹50,000 cash bonus + Trophy" 
+                value={formData.rewardDesc}
+                onChange={(e) => setFormData({...formData, rewardDesc: e.target.value})}
+              />
             </div>
             <div className="form-group col-span-2">
               <label>Eligibility Rules</label>
-              <textarea placeholder="Specify who can participate (e.g. Open for all internal members currently active)"></textarea>
+              <textarea 
+                placeholder="Specify who can participate (e.g. Open for all internal members currently active)"
+                value={formData.eligibility}
+                onChange={(e) => setFormData({...formData, eligibility: e.target.value})}
+              ></textarea>
             </div>
           </div>
         </form>
@@ -172,6 +324,15 @@ const AdminRewards = () => {
         .achievers-list-card { padding: 0; }
         .chart-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .chart-header h3 { font-size: 16px; font-weight: 700; }
+        
+        .modal-form { display: flex; flex-direction: column; gap: 24px; margin-top: 8px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .col-span-2 { grid-column: span 2; }
+        .form-group label { font-size: 14px; font-weight: 600; color: #1E293B; }
+        .form-group input, .form-group select, .form-group textarea { padding: 10px 14px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 14px; color: #0F172A; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; background-color: #FFFFFF; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(37,99,235, 0.1); }
       `}</style>
     </div>
   );

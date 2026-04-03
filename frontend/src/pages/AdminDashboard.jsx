@@ -161,7 +161,7 @@ const AdminDashboard = () => {
           <p className="text-secondary">Overview of recruitment operations and performance highlights.</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-outline" onClick={handleExport}>Export Report</button>
+          <button className="btn" style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: 'white' }} onClick={handleExport}>Export Report</button>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}><UserPlus size={18} /> New Vacancy</button>
         </div>
       </div>

@@ -13,6 +13,8 @@ import scriptRoutes from './routes/scriptRoutes.js';
 import interviewRoutes from './routes/interviewRoutes.js';
 import incentiveRoutes from './routes/incentiveRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import rewardRoutes from './routes/rewardRoutes.js';
+import achievementRoutes from './routes/achievementRoutes.js';
 
 dotenv.config();
 
@@ -36,6 +38,8 @@ app.use('/api/scripts', scriptRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/incentives', incentiveRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/rewards', rewardRoutes);
+app.use('/api/achievements', achievementRoutes);
 
 // Dynamic Health Check Route
 app.get('/api/health', (req, res) => {

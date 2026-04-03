@@ -17,6 +17,7 @@ import API_BASE_URL from '../api/config';
 
 const AdminScripts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingScript, setViewingScript] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,7 +140,7 @@ const AdminScripts = () => {
                   <button className="icon-btn-sm text-red" onClick={() => handleDelete(script._id)}>
                     <Trash2 size={16} />
                   </button>
-                  <button className="icon-btn-sm text-blue">
+                  <button className="icon-btn-sm text-blue" onClick={() => setViewingScript(script)}>
                     <ChevronRight size={18} />
                   </button>
                 </div>
@@ -230,6 +231,31 @@ const AdminScripts = () => {
             </div>
           </div>
         </form>
+      </Modal>
+
+      <Modal 
+        isOpen={!!viewingScript} 
+        onClose={() => setViewingScript(null)}
+        title={viewingScript?.name || "View Script"}
+        footer={(
+          <button className="btn btn-primary" onClick={() => setViewingScript(null)}>Close</button>
+        )}
+      >
+        {viewingScript && (
+          <div className="script-view-container" style={{ padding: '0 8px 16px' }}>
+            <div className="script-meta-header" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <span className="badge badge-blue">{viewingScript.category}</span>
+              <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B' }}><Globe size={14} /> {viewingScript.language}</span>
+              <span style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B' }}><UserSquare2 size={14} /> {viewingScript.assignedJobs}</span>
+            </div>
+            <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Script Content</label>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', maxHeight: '400px', overflowY: 'auto' }}>
+              <pre style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+                {viewingScript.content}
+              </pre>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <style>{`

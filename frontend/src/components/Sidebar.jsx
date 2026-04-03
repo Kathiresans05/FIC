@@ -34,7 +34,6 @@ const Sidebar = ({ isOpen }) => {
           { name: 'Interviews', icon: Calendar, path: '/admin/interviews' },
           { name: 'Incentives', icon: Coins, path: '/admin/incentives' },
           { name: 'Rewards', icon: Trophy, path: '/admin/rewards' },
-          { name: 'Payouts', icon: CreditCard, path: '/admin/payouts' },
           { name: 'Reports', icon: BarChart3, path: '/admin/reports' },
           { name: 'Settings', icon: Settings, path: '/admin/settings' },
         ];

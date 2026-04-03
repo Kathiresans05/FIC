@@ -23,6 +23,7 @@ const AdminTeam = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -63,20 +64,26 @@ const AdminTeam = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const payload = {
-        ...formData,
-        role: activeTab === 'team' ? formData.role : 'Agent',
-        status: activeTab === 'team' ? 'Active' : 'Pending'
-      };
+      const payload = { ...formData };
+      if (activeTab === 'team' && !editingUser) payload.role = formData.role || 'Recruitment Manager';
+      if (activeTab === 'agents' && !editingUser) payload.role = 'Agent';
+      
+      if (!editingUser) {
+        payload.status = activeTab === 'team' ? 'Active' : 'Pending';
+      }
 
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
-        method: 'POST',
+      const url = editingUser ? `${API_BASE_URL}/api/users/${editingUser._id}` : `${API_BASE_URL}/api/users`;
+      const method = editingUser ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       if (response.ok) {
         setIsModalOpen(false);
+        setEditingUser(null);
         setFormData({ name: '', email: '', password: '', mobile: '', role: 'Recruitment Manager', location: '', status: 'Active' });
         fetchUsers();
       } else {
@@ -88,6 +95,40 @@ const AdminTeam = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      password: '', // leave empty unless they want to reset
+      mobile: user.mobile || '',
+      role: user.role,
+      location: user.location || '',
+      status: user.status || 'Active'
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteUser = async (user) => {
+    if (!window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${user._id}`, { method: 'DELETE' });
+      if (response.ok) {
+        fetchUsers();
+      } else {
+        alert('Failed to delete user');
+      }
+    } catch (err) {
+      alert('Network error deleting user');
+    }
+  };
+
+  const openNewModal = () => {
+    setEditingUser(null);
+    setFormData({ name: '', email: '', password: '', mobile: '', role: 'Recruitment Manager', location: '', status: 'Active' });
+    setIsModalOpen(true);
   };
 
   const teamColumns = [
@@ -164,7 +205,7 @@ const AdminTeam = () => {
           <p className="text-secondary">Manage internal consultancy team and external recruitment agents.</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+          <button className="btn btn-primary" onClick={openNewModal}>
             <Plus size={18} /> {activeTab === 'team' ? 'Add Team Member' : 'Add New Agent'}
           </button>
         </div>
@@ -196,19 +237,20 @@ const AdminTeam = () => {
           columns={activeTab === 'team' ? teamColumns : agentColumns} 
           data={users} 
           actions={true} 
+          onEdit={handleEditUser}
+          onDelete={handleDeleteUser}
         />
       )}
 
-      {/* Add Member/Agent Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={activeTab === 'team' ? 'Add New Team Member' : 'Register New External Agent'}
+        title={activeTab === 'team' ? (editingUser ? 'Edit Team Member' : 'Add New Team Member') : (editingUser ? 'Edit External Agent' : 'Register New External Agent')}
         footer={(
           <>
             <button className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
             <button className="btn btn-primary" onClick={handleCreateUser} disabled={isSubmitting}>
-              {isSubmitting ? 'Processing...' : (activeTab === 'team' ? 'Add Member' : 'Register Agent')}
+              {isSubmitting ? 'Processing...' : (editingUser ? 'Save Updates' : (activeTab === 'team' ? 'Add Member' : 'Register Agent'))}
             </button>
           </>
         )}
@@ -236,11 +278,11 @@ const AdminTeam = () => {
               />
             </div>
             <div className="form-group">
-              <label>Password</label>
+              <label>Password {editingUser && <span className="text-xs text-secondary">(Leave blank to keep current)</span>}</label>
               <input 
                 type="password" 
-                required 
-                placeholder="Set a login password" 
+                required={!editingUser}
+                placeholder={editingUser ? "Leave empty to retain old password" : "Set a login password"} 
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
@@ -277,6 +319,20 @@ const AdminTeam = () => {
                   <option value="Recruitment Manager">Recruitment Manager</option>
                   <option value="Consultancy Executive">Consultancy Executive</option>
                   <option value="Admin">Administrator</option>
+                </select>
+              </div>
+            )}
+            {editingUser && (
+              <div className="form-group">
+                <label>Status</label>
+                <select 
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                >
+                  <option value="Active">Active</option>
+                  {activeTab === 'agents' && <option value="Verified">Verified</option>}
+                  {activeTab === 'agents' && <option value="Pending">Pending</option>}
+                  <option value="Inactive">Inactive / Suspended</option>
                 </select>
               </div>
             )}

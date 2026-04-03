@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Briefcase, Building2, MapPin, Users, Clock, ShieldAlert, X, Loader2, ArrowRight } from 'lucide-react';
+import { Plus, Briefcase, Building2, MapPin, Users, Clock, ShieldAlert, X, Loader2, ArrowRight, RefreshCw } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
 import API_BASE_URL from '../api/config';
@@ -25,6 +25,7 @@ const JobVacancies = () => {
   });
 
   const fetchJobs = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/jobs`);
       const data = await response.json();
@@ -178,7 +179,10 @@ const JobVacancies = () => {
           <p className="text-secondary">Create, manage, and assign job openings to teams and agents.</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-outline" onClick={() => fetchJobs()}>Refresh</button>
+          <button className="btn btn-outline" onClick={() => fetchJobs()} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
           <button className="btn btn-primary" onClick={() => {
             setEditingId(null);
             setFormData({ 
