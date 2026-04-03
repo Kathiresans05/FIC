@@ -50,17 +50,17 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (role, email, password) => {
+  const login = async (email, password) => {
     const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     try {
-      // Fetch users by role and match email + password
-      const res = await fetch(`${API_BASE}/api/users?role=${encodeURIComponent(role)}`);
+      // Fetch all users and match email + password
+      const res = await fetch(`${API_BASE}/api/users`);
       if (res.ok) {
         const users = await res.json();
         // Find user matching email
         const matchedUser = users.find(u => u.email.toLowerCase() === (email || '').toLowerCase());
         if (!matchedUser) {
-          throw new Error('No account found with this email for the selected role.');
+          throw new Error('No account found with this email.');
         }
         // Check password — if user has a password set, validate it
         if (matchedUser.password && matchedUser.password !== '') {

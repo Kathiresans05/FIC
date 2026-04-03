@@ -29,7 +29,7 @@ const AdminTeam = () => {
     email: '',
     password: '',
     mobile: '',
-    role: 'TeamMember',
+    role: 'Recruitment Manager',
     location: '',
     status: 'Active'
   });
@@ -37,10 +37,17 @@ const AdminTeam = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const role = activeTab === 'team' ? 'TeamMember' : 'Agent';
-      const response = await fetch(`${API_BASE_URL}/api/users?role=${role}`);
+      const response = await fetch(`${API_BASE_URL}/api/users`);
       const data = await response.json();
-      setUsers(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        if (activeTab === 'team') {
+          setUsers(data.filter(u => ['Admin', 'Super Admin', 'Recruitment Manager', 'Consultancy Executive', 'TeamMember'].includes(u.role)));
+        } else {
+          setUsers(data.filter(u => u.role === 'Agent'));
+        }
+      } else {
+        setUsers([]);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -58,7 +65,7 @@ const AdminTeam = () => {
     try {
       const payload = {
         ...formData,
-        role: activeTab === 'team' ? 'TeamMember' : 'Agent',
+        role: activeTab === 'team' ? formData.role : 'Agent',
         status: activeTab === 'team' ? 'Active' : 'Pending'
       };
 
@@ -70,7 +77,7 @@ const AdminTeam = () => {
 
       if (response.ok) {
         setIsModalOpen(false);
-        setFormData({ name: '', email: '', password: '', mobile: '', role: 'TeamMember', location: '', status: 'Active' });
+        setFormData({ name: '', email: '', password: '', mobile: '', role: 'Recruitment Manager', location: '', status: 'Active' });
         fetchUsers();
       } else {
         const error = await response.json();
@@ -92,7 +99,7 @@ const AdminTeam = () => {
           <div className="avatar-sm">{row.name.charAt(0)}</div>
           <div>
             <p className="font-semibold">{row.name}</p>
-            <p className="text-xs text-secondary">{row.role === 'TeamMember' ? 'Recruiter' : row.role}</p>
+            <p className="text-xs text-secondary">{row.role}</p>
           </div>
         </div>
       )
@@ -267,7 +274,8 @@ const AdminTeam = () => {
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value})}
                 >
-                  <option value="TeamMember">Recruiter</option>
+                  <option value="Recruitment Manager">Recruitment Manager</option>
+                  <option value="Consultancy Executive">Consultancy Executive</option>
                   <option value="Admin">Administrator</option>
                 </select>
               </div>

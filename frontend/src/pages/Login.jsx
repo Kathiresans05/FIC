@@ -1,27 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, UserSquare2, Users, Briefcase, Lock } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const { login, user } = useAuth();
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState('Admin');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-
-  // Set default email when role changes
-  useEffect(() => {
-    const defaultEmails = {
-      'Admin': 'admin@forgeindia.pro',
-      'Recruitment Manager': 'recruitment_manager@forgeindia.pro',
-      'Consultancy Executive': 'consultancy_executive@forgeindia.pro',
-      'Agent': 'agent@forgeindia.pro'
-    };
-    setEmail(defaultEmails[selectedRole] || '');
-    setError('');
-  }, [selectedRole]);
 
   useEffect(() => {
     if (user) {
@@ -31,24 +19,14 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  const roles = [
-    { id: 'Admin', name: 'Super Admin / Admin', icon: ShieldCheck, desc: 'Full control over recruitment ops, team, and payouts.' },
-    { id: 'Recruitment Manager', name: 'Recruitment Manager', icon: Briefcase, desc: 'Manage assigned jobs and oversee team performance.' },
-    { id: 'Consultancy Executive', name: 'Consultancy Executive', icon: Users, desc: 'Call candidates, fixed interviews, and track performance.' },
-    { id: 'Agent', name: 'External Agent', icon: UserSquare2, desc: 'Refer candidates and track referral rewards.' },
-  ];
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    const result = await login(selectedRole, email, password);
+    const result = await login(email, password);
     
-    if (result && result.success) {
-      // Navigate after login completes
-      const path = selectedRole === 'Agent' ? '/agent/dashboard' : 
-                   selectedRole.includes('Admin') ? '/admin/dashboard' : '/team/dashboard';
-      navigate(path);
-    } else {
+    if (!result || !result.success) {
       setError(result?.message || 'Login failed. Please check your credentials.');
     }
   };
@@ -68,25 +46,7 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleLogin} className="login-form">
-          <div className="form-group">
-            <label>Select Your Role</label>
-            <div className="role-grid">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  type="button"
-                  className={`role-card ${selectedRole === role.id ? 'active' : ''}`}
-                  onClick={() => setSelectedRole(role.id)}
-                >
-                  <role.icon size={24} className="role-icon" />
-                  <div className="role-info">
-                    <span className="role-name">{role.name}</span>
-                    <span className="role-desc">{role.desc}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           {error && (
             <div className="error-message" style={{ color: '#DC2626', backgroundColor: '#FEF2F2', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', fontWeight: '500', textAlign: 'center', border: '1px solid #FEE2E2' }}>
@@ -109,13 +69,19 @@ const Login = () => {
             <label>Password</label>
             <div className="password-input">
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 placeholder="••••••••" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <Lock size={16} />
+              <button 
+                type="button" 
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
@@ -228,12 +194,22 @@ const Login = () => {
         .password-input {
           position: relative;
         }
-        .password-input svg {
+        .password-toggle {
           position: absolute;
           right: 12px;
           top: 50%;
           transform: translateY(-50%);
           color: #94A3B8;
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4px;
+        }
+        .password-toggle:hover {
+          color: #64748B;
         }
         .login-btn {
           width: 100%;
